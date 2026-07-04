@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penghitung Pembelian</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --bg2: #161822;
+            --card: #1c1f2e;
+            --card-hover: #232740;
+            --border: #2a2e45;
+            --fg: #e8eaf0;
+            --fg-muted: #8b90a8;
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.15);
+            --accent-soft: rgba(245, 158, 11, 0.08);
+            --green: #22c55e;
+            --green-soft: rgba(34, 197, 94, 0.1);
+            --red: #ef4444;
+            --red-soft: rgba(239, 68, 68, 0.1);
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-glow {
+            position: fixed; top: -200px; right: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+            animation: floatGlow 12s ease-in-out infinite;
+        }
+        .bg-glow-2 {
+            position: fixed; bottom: -150px; left: -150px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(34,197,94,0.04) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+            animation: floatGlow2 15s ease-in-out infinite;
+        }
+        @keyframes floatGlow {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-60px, 40px) scale(1.15); }
+        }
+        @keyframes floatGlow2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -30px) scale(1.1); }
+        }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 580px; margin: 0 auto;
+            padding: 24px 16px 100px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center; margin-bottom: 24px;
+            animation: slideDown 0.6s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .header-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), #d97706);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #fff; margin-bottom: 14px;
+            box-shadow: 0 8px 30px rgba(245,158,11,0.25);
+        }
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
+        }
+        .header p { color: var(--fg-muted); font-size: 14px; margin-top: 4px; }
+
+        /* Tab navigasi */
+        .tab-nav {
+            display: flex; gap: 4px;
+            background: var(--bg2); border-radius: var(--radius-sm);
+            padding: 4px; margin-bottom: 20px;
+            border: 1px solid var(--border);
+            animation: slideUp 0.5s ease 0.05s both;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-btn {
+            flex: 1; padding: 11px 16px; border: none;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: transparent; color: var(--fg-muted);
+            transition: all 0.25s ease;
+        }
+        .tab-btn:hover { color: var(--fg); }
+        .tab-btn.active {
+            background: var(--card); color: var(--accent);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        .tab-badge {
+            background: var(--accent); color: #fff;
+            font-size: 11px; font-weight: 700;
+            padding: 1px 7px; border-radius: 10px;
+            min-width: 20px; text-align: center;
+        }
+
+        /* Panel */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Kartu tanggal */
+        .date-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px 20px;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 14px;
+            animation: slideUp 0.5s ease 0.1s both;
+        }
+        .date-icon {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: var(--accent-soft);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 18px; flex-shrink: 0;
+        }
+        .date-info { flex: 1; }
+        .date-label {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1.2px; color: var(--fg-muted); font-weight: 600;
+        }
+        .date-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px; font-weight: 600; margin-top: 2px;
+        }
+
+        /* Daftar item */
+        .items-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .item-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 14px 16px;
+            display: flex; align-items: center; gap: 14px;
+            cursor: pointer; transition: all 0.25s ease;
+            position: relative; overflow: hidden;
+            animation: slideUp 0.4s ease both;
+        }
+        .item-card::before {
+            content: ''; position: absolute;
+            left: 0; top: 0; bottom: 0; width: 3px;
+            background: var(--accent);
+            transform: scaleY(0); transition: transform 0.3s ease;
+            border-radius: 0 3px 3px 0;
+        }
+        .item-card:hover { background: var(--card-hover); border-color: rgba(245,158,11,0.2); }
+        .item-card.checked { background: var(--accent-soft); border-color: rgba(245,158,11,0.25); }
+        .item-card.checked::before { transform: scaleY(1); }
+
+        .checkbox-wrap { position: relative; width: 24px; height: 24px; flex-shrink: 0; }
+        .checkbox-wrap input {
+            position: absolute; opacity: 0; width: 100%; height: 100%;
+            cursor: pointer; z-index: 2;
+        }
+        .checkbox-visual {
+            width: 24px; height: 24px; border-radius: 7px;
+            border: 2px solid var(--border); background: var(--bg2);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.25s ease;
+        }
+        .checkbox-visual i {
+            font-size: 12px; color: #fff; opacity: 0;
+            transform: scale(0); transition: all 0.2s ease;
+        }
+        .checkbox-wrap input:checked + .checkbox-visual {
+            background: var(--accent); border-color: var(--accent);
+            box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+        }
+        .checkbox-wrap input:checked + .checkbox-visual i { opacity: 1; transform: scale(1); }
+        .checkbox-wrap input:focus-visible + .checkbox-visual { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .item-info { flex: 1; min-width: 0; }
+        .item-name { font-weight: 600; font-size: 15px; transition: color 0.2s; }
+        .item-card.checked .item-name { color: var(--accent); }
+        .item-unit { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+        .item-price {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 15px; color: var(--fg-muted);
+            white-space: nowrap; transition: color 0.2s;
+        }
+        .item-card.checked .item-price { color: var(--accent); }
+
+        .qty-row {
+            display: none; align-items: center; gap: 10px;
+            margin-top: 10px; padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .item-card.checked .qty-row { display: flex; }
+        .qty-label { font-size: 12px; color: var(--fg-muted); font-weight: 500; white-space: nowrap; }
+        .qty-controls {
+            display: flex; align-items: center;
+            background: var(--bg); border-radius: 8px;
+            border: 1px solid var(--border); overflow: hidden;
+        }
+        .qty-btn {
+            width: 32px; height: 32px; border: none;
+            background: transparent; color: var(--fg-muted);
+            font-size: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .qty-btn:hover { background: var(--accent-soft); color: var(--accent); }
+        .qty-btn:active { transform: scale(0.9); }
+        .qty-value {
+            width: 36px; text-align: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 14px;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            padding: 6px 0; background: var(--bg2);
+        }
+        .qty-subtotal {
+            margin-left: auto;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 13px;
+            color: var(--accent); white-space: nowrap;
+        }
+
+        /* Ringkasan total */
+        .summary-card {
+            background: linear-gradient(135deg, #1c1f2e 0%, #232740 100%);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; position: sticky; bottom: 16px;
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.4);
+            animation: slideUp 0.5s ease 0.6s both; z-index: 10;
+        }
+        .selected-list {
+            margin-bottom: 12px; max-height: 120px; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .selected-list::-webkit-scrollbar { width: 4px; }
+        .selected-list::-webkit-scrollbar-track { background: transparent; }
+        .selected-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .selected-item {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 4px 0; font-size: 13px;
+        }
+        .selected-item-name { color: var(--fg-muted); display: flex; align-items: center; gap: 6px; }
+        .selected-item-qty {
+            color: var(--accent); font-weight: 600; font-size: 11px;
+            background: var(--accent-soft); padding: 1px 6px; border-radius: 4px;
+        }
+        .selected-item-price {
+            font-family: 'Space Grotesk', sans-serif; color: var(--fg); font-weight: 500;
+        }
+        .empty-state { text-align: center; padding: 8px 0; font-size: 13px; color: var(--fg-muted); font-style: italic; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .summary-row:last-child { margin-bottom: 0; }
+        .summary-label { font-size: 14px; color: var(--fg-muted); }
+        .summary-count { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; }
+        .summary-divider { height: 1px; background: var(--border); margin: 12px 0; }
+        .total-row { display: flex; justify-content: space-between; align-items: center; }
+        .total-label { font-size: 16px; font-weight: 700; }
+        .total-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px; font-weight: 700; color: var(--accent);
+            transition: transform 0.2s ease;
+        }
+        .total-value.bump { transform: scale(1.08); }
+
+        .actions { display: flex; gap: 10px; margin-top: 14px; }
+        .btn {
+            flex: 1; padding: 12px 16px; border: none;
+            border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #d97706);
+            color: #fff; box-shadow: 0 4px 20px rgba(245,158,11,0.25);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 28px rgba(245,158,11,0.35); transform: translateY(-1px); }
+        .btn-secondary {
+            background: var(--bg); color: var(--fg-muted); border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: var(--card-hover); color: var(--fg); border-color: rgba(245,158,11,0.2); }
+        .btn-danger {
+            background: var(--red-soft); color: var(--red); border: 1px solid rgba(239,68,68,0.2);
+        }
+        .btn-danger:hover { background: rgba(239,68,68,0.18); }
+        .btn-save {
+            background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,197,94,0.2);
+        }
+        .btn-save:hover { background: rgba(34,197,94,0.18); }
+
+        /* ========== RIWAYAT ========== */
+        .history-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }
+        .history-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px; font-weight: 700;
+        }
+        .history-empty {
+            text-align: center; padding: 60px 20px;
+            color: var(--fg-muted);
+        }
+        .history-empty i { font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3; }
+        .history-empty p { font-size: 15px; }
+
+        .history-group { margin-bottom: 24px; }
+        .history-date-label {
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--accent); font-weight: 700; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .history-date-label::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        .history-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 16px;
+            margin-bottom: 10px; transition: all 0.25s ease;
+            position: relative; overflow: hidden;
+        }
+        .history-card::before {
+            content: ''; position: absolute;
+            left: 0; top: 0; bottom: 0; width: 3px;
+            background: var(--green); border-radius: 0 3px 3px 0;
+        }
+        .history-card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .history-card-time {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px; font-weight: 600; color: var(--fg);
+        }
+        .history-card-items-count { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+        .history-card-total {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px; font-weight: 700; color: var(--accent);
+        }
+        .history-card-items { margin-bottom: 12px; }
+        .history-detail-item {
+            display: flex; justify-content: space-between;
+            font-size: 13px; padding: 3px 0;
+            color: var(--fg-muted);
+        }
+        .history-detail-item span:last-child {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500; color: var(--fg);
+        }
+        .history-card-actions { display: flex; gap: 8px; }
+        .history-card-actions .btn { flex: none; padding: 8px 14px; font-size: 12px; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px); z-index: 100;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+        .modal {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 24px;
+            max-width: 360px; width: 100%; text-align: center;
+        }
+        .modal h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px; font-weight: 700; margin-bottom: 8px;
+        }
+        .modal p { font-size: 14px; color: var(--fg-muted); margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions .btn { flex: 1; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 24px; left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 12px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; font-weight: 500; z-index: 999;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast i.toast-icon-green { color: var(--green); font-size: 16px; }
+        .toast i.toast-icon-red { color: var(--red); font-size: 16px; }
+
+        @media (max-width: 400px) {
+            .container { padding: 16px 12px 100px; }
+            .header h1 { font-size: 22px; }
+            .total-value { font-size: 20px; }
+            .item-card { padding: 12px; gap: 10px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<div class="toast" id="toast">
+    <i class="fa-solid fa-circle-check toast-icon-green" id="toastIcon"></i>
+    <span id="toastMsg">Berhasil!</span>
+</div>
+
+<!-- Modal konfirmasi hapus -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h3>Hapus Catatan</h3>
+        <p id="deleteModalMsg">Yakin ingin menghapus catatan ini? Tindakan ini tidak bisa dibatalkan.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="deleteCancel">Batal</button>
+            <button class="btn btn-danger" id="deleteConfirm"><i class="fa-solid fa-trash"></i> Hapus</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal konfirmasi hapus semua -->
+<div class="modal-overlay" id="clearAllModal">
+    <div class="modal">
+        <h3>Hapus Semua Riwayat</h3>
+        <p>Semua catatan belanja akan dihapus permanen. Lanjutkan?</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="clearAllCancel">Batal</button>
+            <button class="btn btn-danger" id="clearAllConfirm"><i class="fa-solid fa-trash"></i> Hapus Semua</button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <header class="header">
+        <div class="header-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+        <h1>Penghitung Pembelian</h1>
+        <p>Ceklis item, atur jumlah, simpan catatan per hari</p>
+    </header>
+
+    <!-- Tab navigasi -->
+    <nav class="tab-nav" role="tablist">
+        <button class="tab-btn active" data-tab="input" role="tab" aria-selected="true">
+            <i class="fa-solid fa-plus-circle"></i> Belanja Baru
+        </button>
+        <button class="tab-btn" data-tab="history" role="tab" aria-selected="false">
+            <i class="fa-solid fa-clock-rotate-left"></i> Riwayat
+            <span class="tab-badge" id="historyBadge" style="display:none;">0</span>
+        </button>
+    </nav>
+
+    <!-- ===== PANEL INPUT ===== -->
+    <div class="tab-panel active" id="panelInput">
+        <div class="date-card">
+            <div class="date-icon"><i class="fa-regular fa-calendar"></i></div>
+            <div class="date-info">
+                <div class="date-label">Hari & Tanggal</div>
+                <div class="date-value" id="dateDisplay">Memuat...</div>
+            </div>
+        </div>
+
+        <div class="items-list" id="itemsList"></div>
+
+        <section class="summary-card" aria-label="Ringkasan pembelian">
+            <div class="selected-list" id="selectedList">
+                <div class="empty-state">Belum ada item dipilih</div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row">
+                <span class="summary-label">Jenis item dipilih</span>
+                <span class="summary-count" id="itemCount">0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Total quantity</span>
+                <span class="summary-count" id="totalQty">0</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="total-row">
+                <span class="total-label">Total Harga</span>
+                <span class="total-value" id="totalPrice">Rp 0</span>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" id="btnReset">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+                <button class="btn btn-save" id="btnSave">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                </button>
+                <button class="btn btn-primary" id="btnCopy">
+                    <i class="fa-regular fa-copy"></i> Salin
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ===== PANEL RIWAYAT ===== -->
+    <div class="tab-panel" id="panelHistory">
+        <div class="history-header">
+            <div class="history-title">Riwayat Belanja</div>
+            <button class="btn btn-danger" id="btnClearAll" style="flex:none; padding:8px 14px; font-size:12px; display:none;">
+                <i class="fa-solid fa-trash"></i> Hapus Semua
+            </button>
+        </div>
+        <div id="historyContent"></div>
+    </div>
+</div>
+
+<script>
+    // ===== DATA ITEM =====
+    const items = [
+        { id: 'nanas',    name: 'Nanas',          unit: '1/2',     price: 10500 },
+        { id: 'stroberi', name: 'Stroberi',       unit: '1/2',     price: 10500 },
+        { id: 'anggur',   name: 'Anggur',         unit: '1/2',     price: 9500  },
+        { id: 'melon',    name: 'Melon',          unit: '1/2',     price: 9500  },
+        { id: 'meses',    name: 'Meses',          unit: '1/4',     price: 13000 },
+        { id: 'filoku',   name: 'Filoku',         unit: '1/4',     price: 8000 },
+        { id: 'mentega',  name: 'Mentega',        unit: '1/2',     price: 13500 },
+        { id: 'keju',     name: 'Keju',           unit: 'pcs',     price: 12500 },
+        { id: 'kacang',   name: 'Kacang',         unit: '1 kg',    price: 28000 },
+        { id: 'kresekK',  name: 'Kresek Kecil',   unit: 'pcs',     price: 26000 },
+        { id: 'kresekB',  name: 'Kresek Besar',   unit: 'pcs',     price: 26000 },
+        { id: 'roti',     name: 'Roti',           unit: 'pcs',     price: 3000  },
+        { id: 'kertas',   name: 'Kertas Bungkus', unit: '1 pak',   price: 30000 },
+    ];
+
+    const quantities = {};
+    items.forEach(item => quantities[item.id] = 1);
+
+    // ===== UTILITAS =====
+    function formatRp(num) {
+        return 'Rp ' + num.toLocaleString('id-ID');
+    }
+
+    function getTodayKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getFullDateStr() {
+        const now = new Date();
+        const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        return `${hari[now.getDay()]}, ${now.getDate()} ${bulan[now.getMonth()]} ${now.getFullYear()}`;
+    }
+
+    function getTimeStr(date) {
+        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ===== LOCALSTORAGE =====
+    function getHistory() {
+        try {
+            return JSON.parse(localStorage.getItem('belanjaHistory') || '[]');
+        } catch { return []; }
+    }
+
+    function saveHistory(history) {
+        localStorage.setItem('belanjaHistory', JSON.stringify(history));
+    }
+
+    function addRecord(record) {
+        const history = getHistory();
+        history.unshift(record);
+        // Batasi maksimal 100 catatan
+        if (history.length > 100) history.length = 100;
+        saveHistory(history);
+        updateBadge();
+    }
+
+    function deleteRecord(id) {
+        let history = getHistory();
+        history = history.filter(r => r.id !== id);
+        saveHistory(history);
+        updateBadge();
+        renderHistory();
+    }
+
+    function clearAllHistory() {
+        saveHistory([]);
+        updateBadge();
+        renderHistory();
+    }
+
+    // ===== TANGGAL =====
+    function renderDate() {
+        document.getElementById('dateDisplay').textContent = getFullDateStr();
+    }
+
+    // ===== RENDER ITEM =====
+    function renderItems() {
+        const container = document.getElementById('itemsList');
+        container.innerHTML = '';
+        items.forEach((item, i) => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.style.animationDelay = `${0.15 + i * 0.04}s`;
+            card.dataset.id = item.id;
+            card.innerHTML = `
+                <label class="checkbox-wrap">
+                    <input type="checkbox" id="cb_${item.id}" aria-label="Pilih ${item.name}">
+                    <div class="checkbox-visual"><i class="fa-solid fa-check"></i></div>
+                </label>
+                <div class="item-info" onclick="toggleCheck('${item.id}')">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-unit">${item.unit}</div>
+                    <div class="qty-row">
+                        <span class="qty-label">Jumlah:</span>
+                        <div class="qty-controls">
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty('${item.id}', -1)" aria-label="Kurangi">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <div class="qty-value" id="qty_${item.id}">1</div>
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty('${item.id}', 1)" aria-label="Tambah">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                        <span class="qty-subtotal" id="sub_${item.id}">${formatRp(item.price)}</span>
+                    </div>
+                </div>
+                <div class="item-price">${formatRp(item.price)}</div>
+            `;
+            const cb = card.querySelector('input[type="checkbox"]');
+            cb.addEventListener('change', () => {
+                card.classList.toggle('checked', cb.checked);
+                updateSummary();
+            });
+            container.appendChild(card);
+        });
+    }
+
+    function toggleCheck(id) {
+        const cb = document.getElementById('cb_' + id);
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+    }
+
+    function changeQty(id, delta) {
+        const newVal = quantities[id] + delta;
+        if (newVal < 1 || newVal > 99) return;
+        quantities[id] = newVal;
+        document.getElementById('qty_' + id).textContent = newVal;
+        const item = items.find(i => i.id === id);
+        document.getElementById('sub_' + id).textContent = formatRp(item.price * newVal);
+        updateSummary();
+    }
+
+    // ===== RINGKASAN =====
+    function getSelectedItems() {
+        const selected = [];
+        items.forEach(item => {
+            const cb = document.getElementById('cb_' + item.id);
+            if (cb.checked) {
+                const qty = quantities[item.id];
+                selected.push({ name: item.name, unit: item.unit, price: item.price, qty, subtotal: item.price * qty });
+            }
+        });
+        return selected;
+    }
+
+    function updateSummary() {
+        const selected = getSelectedItems();
+        let total = 0, totalQty = 0;
+        selected.forEach(s => { total += s.subtotal; totalQty += s.qty; });
+
+        document.getElementById('itemCount').textContent = selected.length;
+        document.getElementById('totalQty').textContent = totalQty;
+        const totalEl = document.getElementById('totalPrice');
+        totalEl.textContent = formatRp(total);
+        totalEl.classList.add('bump');
+        setTimeout(() => totalEl.classList.remove('bump'), 200);
+
+        const listEl = document.getElementById('selectedList');
+        if (selected.length === 0) {
+            listEl.innerHTML = '<div class="empty-state">Belum ada item dipilih</div>';
+        } else {
+            listEl.innerHTML = selected.map(s => `
+                <div class="selected-item">
+                    <span class="selected-item-name">${s.name} <span class="selected-item-qty">x${s.qty}</span></span>
+                    <span class="selected-item-price">${formatRp(s.subtotal)}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    // ===== TOAST =====
+    function showToast(msg, type = 'green') {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        document.getElementById('toastMsg').textContent = msg;
+        icon.className = type === 'green'
+            ? 'fa-solid fa-circle-check toast-icon-green'
+            : 'fa-solid fa-circle-xmark toast-icon-red';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // ===== SIMPAN CATATAN =====
+    document.getElementById('btnSave').addEventListener('click', () => {
+        const selected = getSelectedItems();
+        if (selected.length === 0) {
+            showToast('Pilih minimal 1 item untuk disimpan', 'red');
+            return;
+        }
+        let total = 0;
+        selected.forEach(s => total += s.subtotal);
+
+        const record = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            date: getTodayKey(),
+            dateFull: getFullDateStr(),
+            time: getTimeStr(new Date()),
+            items: selected,
+            total: total,
+            totalQty: selected.reduce((a, s) => a + s.qty, 0)
+        };
+
+        addRecord(record);
+        showToast('Catatan belanja berhasil disimpan!');
+
+        // Reset setelah menyimpan
+        resetAll();
+    });
+
+    // ===== RESET =====
+    function resetAll() {
+        items.forEach(item => {
+            quantities[item.id] = 1;
+            document.getElementById('qty_' + item.id).textContent = 1;
+            document.getElementById('sub_' + item.id).textContent = formatRp(item.price);
+            const cb = document.getElementById('cb_' + item.id);
+            cb.checked = false;
+            cb.closest('.item-card').classList.remove('checked');
+        });
+        updateSummary();
+    }
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+        resetAll();
+        showToast('Semua pilihan telah direset');
+    });
+
+    // ===== SALIN =====
+    document.getElementById('btnCopy').addEventListener('click', () => {
+        const selected = getSelectedItems();
+        if (selected.length === 0) {
+            showToast('Pilih item terlebih dahulu', 'red');
+            return;
+        }
+        let total = 0;
+        let text = `Pembelian - ${getFullDateStr()}\n`;
+        text += '─────────────────────\n';
+        selected.forEach(s => {
+            total += s.subtotal;
+            text += `${s.name} (${s.unit}) x${s.qty}  =  ${formatRp(s.subtotal)}\n`;
+        });
+        text += '─────────────────────\n';
+        text += `TOTAL: ${formatRp(total)}\n`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Ringkasan berhasil disalin!');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Ringkasan berhasil disalin!');
+        });
+    });
+
+    // ===== TAB NAVIGASI =====
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            const panelId = btn.dataset.tab === 'input' ? 'panelInput' : 'panelHistory';
+            document.getElementById(panelId).classList.add('active');
+            if (btn.dataset.tab === 'history') renderHistory();
+        });
+    });
+
+    // ===== BADGE RIWAYAT =====
+    function updateBadge() {
+        const count = getHistory().length;
+        const badge = document.getElementById('historyBadge');
+        const clearBtn = document.getElementById('btnClearAll');
+        if (count > 0) {
+            badge.style.display = 'inline';
+            badge.textContent = count > 99 ? '99+' : count;
+            clearBtn.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+            clearBtn.style.display = 'none';
+        }
+    }
+
+    // ===== RENDER RIWAYAT =====
+    function renderHistory() {
+        const history = getHistory();
+        const container = document.getElementById('historyContent');
+
+        if (history.length === 0) {
+            container.innerHTML = `
+                <div class="history-empty">
+                    <i class="fa-solid fa-receipt"></i>
+                    <p>Belum ada catatan belanja</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Kelompokkan berdasarkan tanggal
+        const groups = {};
+        history.forEach(r => {
+            if (!groups[r.date]) groups[r.date] = [];
+            groups[r.date].push(r);
+        });
+
+        let html = '';
+        // Urutkan tanggal terbaru di atas
+        const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+        sortedDates.forEach(date => {
+            const dayTotal = groups[date].reduce((a, r) => a + r.total, 0);
+            html += `
+                <div class="history-group">
+                    <div class="history-date-label">
+                        ${groups[date][0].dateFull}
+                        <span style="font-size:11px; color:var(--fg-muted); font-weight:400; letter-spacing:0; text-transform:none; margin-left:4px;">
+                            (${formatRp(dayTotal)})
+                        </span>
+                    </div>
+            `;
+            groups[date].forEach(record => {
+                const itemsHtml = record.items.map(s =>
+                    `<div class="history-detail-item">
+                        <span>${s.name} (${s.unit}) x${s.qty}</span>
+                        <span>${formatRp(s.subtotal)}</span>
+                    </div>`
+                ).join('');
+
+                html += `
+                    <div class="history-card" data-id="${record.id}">
+                        <div class="history-card-header">
+                            <div>
+                                <div class="history-card-time"><i class="fa-regular fa-clock" style="margin-right:6px; opacity:0.5;"></i>${record.time}</div>
+                                <div class="history-card-items-count">${record.items.length} jenis item, ${record.totalQty} quantity</div>
+                            </div>
+                            <div class="history-card-total">${formatRp(record.total)}</div>
+                        </div>
+                        <div class="history-card-items">${itemsHtml}</div>
+                        <div class="history-card-actions">
+                            <button class="btn btn-secondary" onclick="copyRecord('${record.id}')">
+                                <i class="fa-regular fa-copy"></i> Salin
+                            </button>
+                            <button class="btn btn-danger" onclick="confirmDelete('${record.id}')">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    // ===== SALIN CATATAN RIWAYAT =====
+    function copyRecord(id) {
+        const history = getHistory();
+        const record = history.find(r => r.id === id);
+        if (!record) return;
+
+        let text = `Pembelian - ${record.dateFull}, ${record.time}\n`;
+        text += '─────────────────────\n';
+        record.items.forEach(s => {
+            text += `${s.name} (${s.unit}) x${s.qty}  =  ${formatRp(s.subtotal)}\n`;
+        });
+        text += '─────────────────────\n';
+        text += `TOTAL: ${formatRp(record.total)}\n`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Catatan berhasil disalin!');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Catatan berhasil disalin!');
+        });
+    }
+
+    // ===== HAPUS CATATAN (dengan konfirmasi) =====
+    let pendingDeleteId = null;
+
+    function confirmDelete(id) {
+        pendingDeleteId = id;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    document.getElementById('deleteCancel').addEventListener('click', () => {
+        pendingDeleteId = null;
+        document.getElementById('deleteModal').classList.remove('show');
+    });
+
+    document.getElementById('deleteConfirm').addEventListener('click', () => {
+        if (pendingDeleteId) {
+            deleteRecord(pendingDeleteId);
+            showToast('Catatan berhasil dihapus');
+            pendingDeleteId = null;
+        }
+        document.getElementById('deleteModal').classList.remove('show');
+    });
+
+    // ===== HAPUS SEMUA RIWAYAT =====
+    document.getElementById('btnClearAll').addEventListener('click', () => {
+        document.getElementById('clearAllModal').classList.add('show');
+    });
+
+    document.getElementById('clearAllCancel').addEventListener('click', () => {
+        document.getElementById('clearAllModal').classList.remove('show');
+    });
+
+    document.getElementById('clearAllConfirm').addEventListener('click', () => {
+        clearAllHistory();
+        showToast('Semua riwayat berhasil dihapus');
+        document.getElementById('clearAllModal').classList.remove('show');
+    });
+
+    // Tutup modal saat klik overlay
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.classList.remove('show');
+        });
+    });
+
+    // ===== INISIALISASI =====
+    renderDate();
+    renderItems();
+    updateSummary();
+    updateBadge();
+    setInterval(renderDate, 60000);
+</script>
+</body>
+</html>
